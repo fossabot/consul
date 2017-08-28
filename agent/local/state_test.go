@@ -121,61 +121,59 @@ func TestAgentAntiEntropy_Services(t *testing.T) {
 		Node:       a.Config.NodeName,
 	}
 
-	retry.Run(t, func(r *retry.R) {
-		if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
-		// Make sure we sent along our node info when we synced.
-		id := services.NodeServices.Node.ID
-		addrs := services.NodeServices.Node.TaggedAddresses
-		meta := services.NodeServices.Node.Meta
-		if id != a.Config.NodeID ||
-			!reflect.DeepEqual(addrs, a.Config.TaggedAddresses) ||
-			!reflect.DeepEqual(meta, a.Config.Meta) {
-			r.Fatalf("bad: %v", services.NodeServices.Node)
-		}
+	// Make sure we sent along our node info when we synced.
+	id := services.NodeServices.Node.ID
+	addrs := services.NodeServices.Node.TaggedAddresses
+	meta := services.NodeServices.Node.Meta
+	if id != a.Config.NodeID ||
+		!reflect.DeepEqual(addrs, a.Config.TaggedAddresses) ||
+		!reflect.DeepEqual(meta, a.Config.Meta) {
+		t.Fatalf("bad: %v", services.NodeServices.Node)
+	}
 
-		// We should have 6 services (consul included)
-		if len(services.NodeServices.Services) != 6 {
-			r.Fatalf("bad: %v", services.NodeServices.Services)
-		}
+	// We should have 6 services (consul included)
+	if len(services.NodeServices.Services) != 6 {
+		t.Fatalf("bad: %v", services.NodeServices.Services)
+	}
 
-		// All the services should match
-		for id, serv := range services.NodeServices.Services {
-			serv.CreateIndex, serv.ModifyIndex = 0, 0
-			switch id {
-			case "mysql":
-				if !reflect.DeepEqual(serv, srv1) {
-					r.Fatalf("bad: %v %v", serv, srv1)
-				}
-			case "redis":
-				if !reflect.DeepEqual(serv, srv2) {
-					r.Fatalf("bad: %#v %#v", serv, srv2)
-				}
-			case "web":
-				if !reflect.DeepEqual(serv, srv3) {
-					r.Fatalf("bad: %v %v", serv, srv3)
-				}
-			case "api":
-				if !reflect.DeepEqual(serv, srv5) {
-					r.Fatalf("bad: %v %v", serv, srv5)
-				}
-			case "cache":
-				if !reflect.DeepEqual(serv, srv6) {
-					r.Fatalf("bad: %v %v", serv, srv6)
-				}
-			case structs.ConsulServiceID:
-				// ignore
-			default:
-				r.Fatalf("unexpected service: %v", id)
+	// All the services should match
+	for id, serv := range services.NodeServices.Services {
+		serv.CreateIndex, serv.ModifyIndex = 0, 0
+		switch id {
+		case "mysql":
+			if !reflect.DeepEqual(serv, srv1) {
+				t.Fatalf("bad: %v %v", serv, srv1)
 			}
+		case "redis":
+			if !reflect.DeepEqual(serv, srv2) {
+				t.Fatalf("bad: %#v %#v", serv, srv2)
+			}
+		case "web":
+			if !reflect.DeepEqual(serv, srv3) {
+				t.Fatalf("bad: %v %v", serv, srv3)
+			}
+		case "api":
+			if !reflect.DeepEqual(serv, srv5) {
+				t.Fatalf("bad: %v %v", serv, srv5)
+			}
+		case "cache":
+			if !reflect.DeepEqual(serv, srv6) {
+				t.Fatalf("bad: %v %v", serv, srv6)
+			}
+		case structs.ConsulServiceID:
+			// ignore
+		default:
+			t.Fatalf("unexpected service: %v", id)
 		}
+	}
 
-		if err := servicesInSync(a.State, 5); err != nil {
-			r.Fatal(err)
-		}
-	})
+	if err := servicesInSync(a.State, 5); err != nil {
+		t.Fatal(err)
+	}
 
 	// Remove one of the services
 	a.State.RemoveService("api")
@@ -184,47 +182,45 @@ func TestAgentAntiEntropy_Services(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	retry.Run(t, func(r *retry.R) {
-		if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
-		// We should have 5 services (consul included)
-		if len(services.NodeServices.Services) != 5 {
-			r.Fatalf("bad: %v", services.NodeServices.Services)
-		}
+	// We should have 5 services (consul included)
+	if len(services.NodeServices.Services) != 5 {
+		t.Fatalf("bad: %v", services.NodeServices.Services)
+	}
 
-		// All the services should match
-		for id, serv := range services.NodeServices.Services {
-			serv.CreateIndex, serv.ModifyIndex = 0, 0
-			switch id {
-			case "mysql":
-				if !reflect.DeepEqual(serv, srv1) {
-					r.Fatalf("bad: %v %v", serv, srv1)
-				}
-			case "redis":
-				if !reflect.DeepEqual(serv, srv2) {
-					r.Fatalf("bad: %#v %#v", serv, srv2)
-				}
-			case "web":
-				if !reflect.DeepEqual(serv, srv3) {
-					r.Fatalf("bad: %v %v", serv, srv3)
-				}
-			case "cache":
-				if !reflect.DeepEqual(serv, srv6) {
-					r.Fatalf("bad: %v %v", serv, srv6)
-				}
-			case structs.ConsulServiceID:
-				// ignore
-			default:
-				r.Fatalf("unexpected service: %v", id)
+	// All the services should match
+	for id, serv := range services.NodeServices.Services {
+		serv.CreateIndex, serv.ModifyIndex = 0, 0
+		switch id {
+		case "mysql":
+			if !reflect.DeepEqual(serv, srv1) {
+				t.Fatalf("bad: %v %v", serv, srv1)
 			}
+		case "redis":
+			if !reflect.DeepEqual(serv, srv2) {
+				t.Fatalf("bad: %#v %#v", serv, srv2)
+			}
+		case "web":
+			if !reflect.DeepEqual(serv, srv3) {
+				t.Fatalf("bad: %v %v", serv, srv3)
+			}
+		case "cache":
+			if !reflect.DeepEqual(serv, srv6) {
+				t.Fatalf("bad: %v %v", serv, srv6)
+			}
+		case structs.ConsulServiceID:
+			// ignore
+		default:
+			t.Fatalf("unexpected service: %v", id)
 		}
+	}
 
-		if err := servicesInSync(a.State, 4); err != nil {
-			r.Fatal(err)
-		}
-	})
+	if err := servicesInSync(a.State, 4); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestAgentAntiEntropy_EnableTagOverride(t *testing.T) {
@@ -686,43 +682,41 @@ func TestAgentAntiEntropy_Checks(t *testing.T) {
 	var checks structs.IndexedHealthChecks
 
 	// Verify that we are in sync
-	retry.Run(t, func(r *retry.R) {
-		if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
-		// We should have 5 checks (serf included)
-		if len(checks.HealthChecks) != 5 {
-			r.Fatalf("bad: %v", checks)
-		}
+	// We should have 5 checks (serf included)
+	if len(checks.HealthChecks) != 5 {
+		t.Fatalf("bad: %v", checks)
+	}
 
-		// All the checks should match
-		for _, chk := range checks.HealthChecks {
-			chk.CreateIndex, chk.ModifyIndex = 0, 0
-			switch chk.CheckID {
-			case "mysql":
-				if !reflect.DeepEqual(chk, chk1) {
-					r.Fatalf("bad: %v %v", chk, chk1)
-				}
-			case "redis":
-				if !reflect.DeepEqual(chk, chk2) {
-					r.Fatalf("bad: %v %v", chk, chk2)
-				}
-			case "web":
-				if !reflect.DeepEqual(chk, chk3) {
-					r.Fatalf("bad: %v %v", chk, chk3)
-				}
-			case "cache":
-				if !reflect.DeepEqual(chk, chk5) {
-					r.Fatalf("bad: %v %v", chk, chk5)
-				}
-			case "serfHealth":
-				// ignore
-			default:
-				r.Fatalf("unexpected check: %v", chk)
+	// All the checks should match
+	for _, chk := range checks.HealthChecks {
+		chk.CreateIndex, chk.ModifyIndex = 0, 0
+		switch chk.CheckID {
+		case "mysql":
+			if !reflect.DeepEqual(chk, chk1) {
+				t.Fatalf("bad: %v %v", chk, chk1)
 			}
+		case "redis":
+			if !reflect.DeepEqual(chk, chk2) {
+				t.Fatalf("bad: %v %v", chk, chk2)
+			}
+		case "web":
+			if !reflect.DeepEqual(chk, chk3) {
+				t.Fatalf("bad: %v %v", chk, chk3)
+			}
+		case "cache":
+			if !reflect.DeepEqual(chk, chk5) {
+				t.Fatalf("bad: %v %v", chk, chk5)
+			}
+		case "serfHealth":
+			// ignore
+		default:
+			t.Fatalf("unexpected check: %v", chk)
 		}
-	})
+	}
 
 	if err := checksInSync(a.State, 4); err != nil {
 		t.Fatal(err)
@@ -757,39 +751,37 @@ func TestAgentAntiEntropy_Checks(t *testing.T) {
 	}
 
 	// Verify that we are in sync
-	retry.Run(t, func(r *retry.R) {
-		if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
-		// We should have 5 checks (serf included)
-		if len(checks.HealthChecks) != 4 {
-			r.Fatalf("bad: %v", checks)
-		}
+	// We should have 5 checks (serf included)
+	if len(checks.HealthChecks) != 4 {
+		t.Fatalf("bad: %v", checks)
+	}
 
-		// All the checks should match
-		for _, chk := range checks.HealthChecks {
-			chk.CreateIndex, chk.ModifyIndex = 0, 0
-			switch chk.CheckID {
-			case "mysql":
-				if !reflect.DeepEqual(chk, chk1) {
-					r.Fatalf("bad: %v %v", chk, chk1)
-				}
-			case "web":
-				if !reflect.DeepEqual(chk, chk3) {
-					r.Fatalf("bad: %v %v", chk, chk3)
-				}
-			case "cache":
-				if !reflect.DeepEqual(chk, chk5) {
-					r.Fatalf("bad: %v %v", chk, chk5)
-				}
-			case "serfHealth":
-				// ignore
-			default:
-				r.Fatalf("unexpected check: %v", chk)
+	// All the checks should match
+	for _, chk := range checks.HealthChecks {
+		chk.CreateIndex, chk.ModifyIndex = 0, 0
+		switch chk.CheckID {
+		case "mysql":
+			if !reflect.DeepEqual(chk, chk1) {
+				t.Fatalf("bad: %v %v", chk, chk1)
 			}
+		case "web":
+			if !reflect.DeepEqual(chk, chk3) {
+				t.Fatalf("bad: %v %v", chk, chk3)
+			}
+		case "cache":
+			if !reflect.DeepEqual(chk, chk5) {
+				t.Fatalf("bad: %v %v", chk, chk5)
+			}
+		case "serfHealth":
+			// ignore
+		default:
+			t.Fatalf("unexpected check: %v", chk)
 		}
-	})
+	}
 
 	if err := checksInSync(a.State, 3); err != nil {
 		t.Fatal(err)
@@ -917,41 +909,39 @@ func TestAgentAntiEntropy_Checks_ACLDeny(t *testing.T) {
 	}
 
 	// Verify that we are in sync
-	retry.Run(t, func(r *retry.R) {
-		req := structs.NodeSpecificRequest{
-			Datacenter: "dc1",
-			Node:       a.Config.NodeName,
-			QueryOptions: structs.QueryOptions{
-				Token: "root",
-			},
-		}
-		var checks structs.IndexedHealthChecks
-		if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	req := structs.NodeSpecificRequest{
+		Datacenter: "dc1",
+		Node:       a.Config.NodeName,
+		QueryOptions: structs.QueryOptions{
+			Token: "root",
+		},
+	}
+	var checks structs.IndexedHealthChecks
+	if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
-		// We should have 2 checks (serf included)
-		if len(checks.HealthChecks) != 2 {
-			r.Fatalf("bad: %v", checks)
-		}
+	// We should have 2 checks (serf included)
+	if len(checks.HealthChecks) != 2 {
+		t.Fatalf("bad: %v", checks)
+	}
 
-		// All the checks should match
-		for _, chk := range checks.HealthChecks {
-			chk.CreateIndex, chk.ModifyIndex = 0, 0
-			switch chk.CheckID {
-			case "mysql-check":
-				t.Fatalf("should not be permitted")
-			case "api-check":
-				if !reflect.DeepEqual(chk, chk2) {
-					r.Fatalf("bad: %v %v", chk, chk2)
-				}
-			case "serfHealth":
-				// ignore
-			default:
-				r.Fatalf("unexpected check: %v", chk)
+	// All the checks should match
+	for _, chk := range checks.HealthChecks {
+		chk.CreateIndex, chk.ModifyIndex = 0, 0
+		switch chk.CheckID {
+		case "mysql-check":
+			t.Fatalf("should not be permitted")
+		case "api-check":
+			if !reflect.DeepEqual(chk, chk2) {
+				t.Fatalf("bad: %v %v", chk, chk2)
 			}
+		case "serfHealth":
+			// ignore
+		default:
+			t.Fatalf("unexpected check: %v", chk)
 		}
-	})
+	}
 
 	if err := checksInSync(a.State, 2); err != nil {
 		t.Fatal(err)
@@ -964,7 +954,7 @@ func TestAgentAntiEntropy_Checks_ACLDeny(t *testing.T) {
 	}
 
 	// Verify that we are in sync
-	retry.Run(t, func(r *retry.R) {
+	{
 		req := structs.NodeSpecificRequest{
 			Datacenter: "dc1",
 			Node:       a.Config.NodeName,
@@ -974,12 +964,12 @@ func TestAgentAntiEntropy_Checks_ACLDeny(t *testing.T) {
 		}
 		var checks structs.IndexedHealthChecks
 		if err := a.RPC("Health.NodeChecks", &req, &checks); err != nil {
-			r.Fatalf("err: %v", err)
+			t.Fatalf("err: %v", err)
 		}
 
 		// We should have 1 check (just serf)
 		if len(checks.HealthChecks) != 1 {
-			r.Fatalf("bad: %v", checks)
+			t.Fatalf("bad: %v", checks)
 		}
 
 		// All the checks should match
@@ -987,16 +977,16 @@ func TestAgentAntiEntropy_Checks_ACLDeny(t *testing.T) {
 			chk.CreateIndex, chk.ModifyIndex = 0, 0
 			switch chk.CheckID {
 			case "mysql-check":
-				r.Fatalf("should not be permitted")
+				t.Fatalf("should not be permitted")
 			case "api-check":
-				r.Fatalf("should be deleted")
+				t.Fatalf("should be deleted")
 			case "serfHealth":
 				// ignore
 			default:
-				r.Fatalf("unexpected check: %v", chk)
+				t.Fatalf("unexpected check: %v", chk)
 			}
 		}
-	})
+	}
 
 	if err := checksInSync(a.State, 1); err != nil {
 		t.Fatal(err)
@@ -1212,23 +1202,20 @@ func TestAgentAntiEntropy_NodeInfo(t *testing.T) {
 		Node:       a.Config.NodeName,
 	}
 	var services structs.IndexedNodeServices
-	// Wait for the sync
-	retry.Run(t, func(r *retry.R) {
-		if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
-		// Make sure we synced our node info - this should have ridden on the
-		// "consul" service sync
-		id := services.NodeServices.Node.ID
-		addrs := services.NodeServices.Node.TaggedAddresses
-		meta := services.NodeServices.Node.Meta
-		if id != cfg.NodeID ||
-			!reflect.DeepEqual(addrs, cfg.TaggedAddresses) ||
-			!reflect.DeepEqual(meta, cfg.Meta) {
-			r.Fatalf("bad: %v", services.NodeServices.Node)
-		}
-	})
+	// Make sure we synced our node info - this should have ridden on the
+	// "consul" service sync
+	id := services.NodeServices.Node.ID
+	addrs := services.NodeServices.Node.TaggedAddresses
+	meta := services.NodeServices.Node.Meta
+	if id != cfg.NodeID ||
+		!reflect.DeepEqual(addrs, cfg.TaggedAddresses) ||
+		!reflect.DeepEqual(meta, cfg.Meta) {
+		t.Fatalf("bad: %v", services.NodeServices.Node)
+	}
 
 	// Blow away the catalog version of the node info
 	if err := a.RPC("Catalog.Register", args, &out); err != nil {
@@ -1240,20 +1227,20 @@ func TestAgentAntiEntropy_NodeInfo(t *testing.T) {
 	}
 
 	// Wait for the sync - this should have been a sync of just the node info
-	retry.Run(t, func(r *retry.R) {
-		if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
-			r.Fatalf("err: %v", err)
-		}
+	if err := a.RPC("Catalog.NodeServices", &req, &services); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
+	{
 		id := services.NodeServices.Node.ID
 		addrs := services.NodeServices.Node.TaggedAddresses
 		meta := services.NodeServices.Node.Meta
 		if id != cfg.NodeID ||
 			!reflect.DeepEqual(addrs, cfg.TaggedAddresses) ||
 			!reflect.DeepEqual(meta, cfg.Meta) {
-			r.Fatalf("bad: %v", services.NodeServices.Node)
+			t.Fatalf("bad: %v", services.NodeServices.Node)
 		}
-	})
+	}
 }
 
 func TestAgent_serviceTokens(t *testing.T) {
