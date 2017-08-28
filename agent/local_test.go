@@ -1424,7 +1424,7 @@ func TestAgent_serviceTokens(t *testing.T) {
 
 	tokens := new(token.Store)
 	tokens.UpdateUserToken("default")
-	l := NewLocalState(TestConfig(), nil, tokens)
+	l := NewLocalState(TestConfig(), nil, tokens, make(chan struct{}, 1))
 
 	l.AddService(&structs.NodeService{
 		ID: "redis",
@@ -1453,7 +1453,7 @@ func TestAgent_checkTokens(t *testing.T) {
 
 	tokens := new(token.Store)
 	tokens.UpdateUserToken("default")
-	l := NewLocalState(TestConfig(), nil, tokens)
+	l := NewLocalState(TestConfig(), nil, tokens, make(chan struct{}, 1))
 
 	// Returns default when no token is set
 	if token := l.CheckToken("mem"); token != "default" {
@@ -1476,7 +1476,7 @@ func TestAgent_checkTokens(t *testing.T) {
 func TestAgent_checkCriticalTime(t *testing.T) {
 	t.Parallel()
 	cfg := TestConfig()
-	l := NewLocalState(cfg, nil, new(token.Store))
+	l := NewLocalState(cfg, nil, new(token.Store), make(chan struct{}, 1))
 
 	svc := &structs.NodeService{ID: "redis", Service: "redis", Port: 8000}
 	l.AddService(svc, "")
@@ -1539,7 +1539,7 @@ func TestAgent_checkCriticalTime(t *testing.T) {
 func TestAgent_AddCheckFailure(t *testing.T) {
 	t.Parallel()
 	cfg := TestConfig()
-	l := NewLocalState(cfg, nil, new(token.Store))
+	l := NewLocalState(cfg, nil, new(token.Store), make(chan struct{}, 1))
 
 	// Add a check for a service that does not exist and verify that it fails
 	checkID := types.CheckID("redis:1")
@@ -1555,38 +1555,6 @@ func TestAgent_AddCheckFailure(t *testing.T) {
 		t.Fatalf("Expected error when adding a check for a non-existent service but got %v", err)
 	}
 
-}
-
-func TestAgent_nestedPauseResume(t *testing.T) {
-	t.Parallel()
-	l := new(localState)
-	if l.isPaused() != false {
-		t.Fatal("localState should be unPaused after init")
-	}
-	l.Pause()
-	if l.isPaused() != true {
-		t.Fatal("localState should be Paused after first call to Pause()")
-	}
-	l.Pause()
-	if l.isPaused() != true {
-		t.Fatal("localState should STILL be Paused after second call to Pause()")
-	}
-	l.Resume()
-	if l.isPaused() != true {
-		t.Fatal("localState should STILL be Paused after FIRST call to Resume()")
-	}
-	l.Resume()
-	if l.isPaused() != false {
-		t.Fatal("localState should NOT be Paused after SECOND call to Resume()")
-	}
-
-	defer func() {
-		err := recover()
-		if err == nil {
-			t.Fatal("unbalanced Resume() should cause a panic()")
-		}
-	}()
-	l.Resume()
 }
 
 func TestAgent_sendCoordinate(t *testing.T) {
