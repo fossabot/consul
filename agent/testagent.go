@@ -62,10 +62,6 @@ type TestAgent struct {
 	// Key is the optional encryption key for the LAN and WAN keyring.
 	Key string
 
-	// NoInitialSync determines whether an anti-entropy run
-	// will be scheduled after the agent started.
-	NoInitialSync bool
-
 	// dns is a reference to the first started DNS endpoint.
 	// It is valid after Start().
 	dns *DNSServer
@@ -173,9 +169,9 @@ func (a *TestAgent) Start() *TestAgent {
 			}
 		}
 	}
-	if !a.NoInitialSync {
-		a.Agent.StartSync()
-	}
+
+	// Start the anti-entropy syncer
+	a.Agent.StartSync()
 
 	var out structs.IndexedNodes
 	retry.Run(&panicFailer{}, func(r *retry.R) {
@@ -198,7 +194,7 @@ func (a *TestAgent) Start() *TestAgent {
 				r.Fatal(a.Name, "No leader")
 			}
 			if out.Index == 0 {
-				r.Fatal(a.Name, "Consul index is 0")
+				r.Fatal(a.Name, ": Consul index is 0")
 			}
 		} else {
 			req, _ := http.NewRequest("GET", "/v1/agent/self", nil)
@@ -305,7 +301,7 @@ func TestConfig() *Config {
 	cfg := DefaultConfig()
 
 	cfg.Version = version.Version
-	cfg.VersionPrerelease = "c.d"
+	cfg.VersionPrerelease = "pre"
 
 	cfg.NodeID = types.NodeID(nodeID)
 	cfg.NodeName = "Node " + nodeID
